@@ -193,7 +193,6 @@
     <div class="control-panel">
         <input type="file" id="fileInput" accept="image/jpeg, image/jpg" style="display:none">
         
-        <!-- Due Selettori Separati -->
         <div class="panel-row" style="gap: 10px;">
             <div class="selector-wrapper">
                 <select id="aspectRatio" disabled>
@@ -258,7 +257,6 @@
                     canvas.style.display = 'block';
                     changeImgBtn.style.display = 'block';
                     
-                    // Imposta orientamento di partenza in base alla foto caricata
                     if (sourceImg.naturalWidth >= sourceImg.naturalHeight) {
                         orientationSelect.value = 'horizontal';
                     } else {
@@ -275,7 +273,6 @@
 
     function updateSelectors() {
         const mode = aspectRatioSelect.value;
-        // Se è 1:1 o Originale, l'orientamento non serve ed è bloccato
         if (mode === '1:1' || mode === 'original') {
             orientationSelect.disabled = true;
         } else {
@@ -310,14 +307,11 @@
 
         if (mode !== 'original') {
             let [wRatio, hRatio] = mode.split(':').map(Number);
-            
-            // Inverte le proporzioni se l'utente sceglie "Verticale"
             if (orient === 'vertical') {
                 const temp = wRatio;
                 wRatio = hRatio;
                 hRatio = temp;
             }
-            
             const targetAspect = wRatio / hRatio;
             
             if ((imgW / imgH) > targetAspect) {
@@ -363,15 +357,11 @@
 
         const canvasAspect = canvasW / canvasH;
 
-        // --- NUOVA LOGICA DI STRUTTURAZIONE GEOMETRICA ---
-        // Se la foto è Orizzontale e la tela è Verticale (o viceversa), CENTRA PERFETTAMENTE lo scatto
         if ((imgAspect >= 1 && canvasAspect < 1) || (imgAspect < 1 && canvasAspect >= 1)) {
             renderX = (canvasW - renderW) / 2;
-            // Calcola la posizione lasciando lo stesso spazio sia sopra che sotto (escludendo l'area del testo)
             renderY = (maxBoxH - renderH) / 2 + baseBorder;
             remainingBottomH = canvasH - (renderY + renderH);
         } else {
-            // Se mantengono la stessa direzione (es. foto verticale in tela verticale)
             const totalExtraWidth = canvasW - renderW;
             const totalExtraHeight = canvasH - renderH;
 
@@ -422,8 +412,11 @@
             shutter = expTime < 1 ? `1/${Math.round(1 / expTime)}s` : `${expTime}s`;
         }
 
-        // --- TIPOGRAFIA PREMIUM ---
-        const fontSizeMain = canvasW * 0.0135; 
+        // --- CALCOLO NUOVA DIMENSIONE DEL TESTO INGRANDITO ---
+        // Usiamo la media geometrica di entrambi i lati per evitare che si rimpicciolisca troppo nei tagli verticali strette
+        const baseDimension = Math.sqrt(canvasW * canvasH);
+        const fontSizeMain = baseDimension * 0.016; // Incrementata la scala globale per massima leggibilità
+        
         const photoBottomY = renderY + renderH;
         const textCenterY = photoBottomY + (remainingBottomH / 2);
 
@@ -444,17 +437,18 @@
         ctx.textAlign = "left";
         ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
         ctx.fillStyle = "#55555a"; 
-        ctx.fillText(prefixText, startX, textCenterY - (fontSizeMain * 0.7));
+        ctx.fillText(prefixText, startX, textCenterY - (fontSizeMain * 0.75));
 
         ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
         ctx.fillStyle = "#1c1c1e";
-        ctx.fillText(modelText, startX + prefixWidth, textCenterY - (fontSizeMain * 0.7));
+        ctx.fillText(modelText, startX + prefixWidth, textCenterY - (fontSizeMain * 0.75));
 
+        // Linea 2 (Dati tecnici): Aumentata la dimensione proporzionale (da 0.75 a 0.82) per renderla leggibile
         ctx.textAlign = "center";
-        ctx.font = `400 ${fontSizeMain * 0.75}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#86868b";
+        ctx.font = `400 ${fontSizeMain * 0.82}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        ctx.fillStyle = "#71717a"; // Grigio leggermente più scuro per miglior contrasto sul bianco
         let technicalString = `${focalText}   ${aperture}   ${shutter}   ${iso}`;
-        ctx.fillText(technicalString, canvasW / 2, textCenterY + (fontSizeMain * 0.7));
+        ctx.fillText(technicalString, canvasW / 2, textCenterY + (fontSizeMain * 0.75));
     }
 
     saveBtn.onclick = () => {
