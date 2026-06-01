@@ -80,7 +80,6 @@
             stroke-width: 1.5;
         }
 
-        /* Ottimizzazione iOS per l'output visivo */
         canvas, .ios-output-img {
             max-width: 100%;
             max-height: 100%;
@@ -171,7 +170,6 @@
             border: 1px solid var(--border);
         }
 
-        /* Modal o overlay per il salvataggio nativo su iOS */
         .ios-hint {
             position: absolute;
             top: 24px;
@@ -252,6 +250,10 @@
 
     let sourceImg = new Image();
     let currentExif = {};
+    
+    // Dimensioni regolate per la stabilità della RAM di iOS
+    let scaledW = 0;
+    let scaledH = 0;
 
     fileInput.addEventListener('change', handleFile);
     aspectRatioSelect.addEventListener('change', updateSelectors);
@@ -269,11 +271,8 @@
         
         const reader = new FileReader();
         reader.onload = (event) => {
-            // Pulizia preventiva per liberare memoria su iOS
             sourceImg.src = ""; 
-            
             sourceImg.onload = () => {
-                // Lettura EXIF sicura racchiusa in un try/catch per evitare crash silenziosi su Safari
                 try {
                     EXIF.getData(sourceImg, function() {
                         currentExif = EXIF.getAllTags(this);
@@ -282,8 +281,24 @@
                         saveBtn.disabled = false;
                         placeholder.style.display = 'none';
                         
-                        // Determina orientamento iniziale
-                        if (sourceImg.naturalWidth >= sourceImg.naturalHeight) {
+                        // ALGORITMO DI RIGENERAZIONE SCALA DI SICUREZZA PER FOTO ORIZZONTALI SU iOS
+                        const MAX_SIDE = 3200; 
+                        let w = sourceImg.naturalWidth;
+                        let h = sourceImg.naturalHeight;
+                        
+                        if (w > MAX_SIDE || h > MAX_SIDE) {
+                            if (w > h) {
+                                h = Math.round((h * MAX_SIDE) / w);
+                                w = MAX_SIDE;
+                            } else {
+                                w = Math.round((w * MAX_SIDE) / h);
+                                h = MAX_SIDE;
+                            }
+                        }
+                        scaledW = w;
+                        scaledH = h;
+
+                        if (scaledW >= scaledH) {
                             orientationSelect.value = 'horizontal';
                         } else {
                             orientationSelect.value = 'vertical';
@@ -293,6 +308,8 @@
                     });
                 } catch (err) {
                     currentExif = {};
+                    scaledW = sourceImg.naturalWidth;
+                    scaledH = sourceImg.naturalHeight;
                     updateSelectors();
                 }
             };
@@ -326,15 +343,11 @@
     function generateFrame() {
         if (!sourceImg.src) return;
 
-        // Nascondiamo l'output precedente per evitare glitch visivi durante il ricalcolo
         iosImg.style.display = 'none';
         iosHint.style.display = 'none';
 
-        const imgW = sourceImg.naturalWidth;
-        const imgH = sourceImg.naturalHeight;
-        
-        let canvasW = imgW;
-        let canvasH = imgH;
+        let canvasW = scaledW;
+        let canvasH = scaledH;
 
         const mode = aspectRatioSelect.value;
         const orient = orientationSelect.value;
@@ -348,16 +361,16 @@
             }
             const targetAspect = wRatio / hRatio;
             
-            if ((imgW / imgH) > targetAspect) {
-                canvasW = imgW;
-                canvasH = imgW / targetAspect;
+            if ((scaledW / scaledH) > targetAspect) {
+                canvasW = scaledW;
+                canvasH = scaledW / targetAspect;
             } else {
-                canvasH = imgH;
-                canvasW = imgH * targetAspect;
+                canvasH = scaledH;
+                canvasW = scaledH * targetAspect;
             }
         } else {
-            canvasW = imgW * 1.06;
-            canvasH = imgH * 1.14;
+            canvasW = scaledW * 1.06;
+            canvasH = scaledH * 1.14;
         }
 
         canvas.width = canvasW;
@@ -370,12 +383,12 @@
         const baseBorder = shortSide * 0.035;
         const standardBottomArea = shortSide * 0.12;
 
-        let renderW = imgW;
-        let renderH = imgH;
+        let renderW = scaledW;
+        let renderH = scaledH;
         
         const maxBoxW = canvasW - (baseBorder * 2);
         const maxBoxH = canvasH - baseBorder - standardBottomArea;
-        const imgAspect = imgW / imgH;
+        const imgAspect = scaledW / scaledH;
         const boxAspect = maxBoxW / maxBoxH;
 
         if (imgAspect > boxAspect) {
@@ -413,9 +426,10 @@
         if (renderY < baseBorder) renderY = baseBorder;
         if (renderX < baseBorder) renderX = baseBorder;
 
+        // Rendering con downsampling sicuro
         ctx.drawImage(sourceImg, renderX, renderY, renderW, renderH);
 
-        // --- PARSING EXIF ---
+        // --- EXIF ---
         let rawMake = currentExif.Make || "";
         let model = currentExif.Model || "Unknown Camera";
         let cleanMake = cleanBrandName(rawMake);
@@ -446,11 +460,9 @@
             shutter = expTime < 1 ? `1/${Math.round(1 / expTime)}s` : `${expTime}s`;
         }
 
-        // --- MATRICE DI PROPORZIONALITÀ REALE DEL TESTO ---
-        // Usiamo l'area complessiva (Media Geometrica) per fare in modo che il testo mantenga la 
-        // STESSA identica proporzione visiva in qualsiasi taglio (1:1, 16:9, 4:3) ed orientamento.
+        // --- CALCOLO TIPOGRAFICO PROPORZIONALE STABILE ---
         const baseAreaScale = Math.sqrt(canvasW * canvasH);
-        const fontSizeMain = baseAreaScale * 0.024; // Dimensione importante, solida ed uniforme
+        const fontSizeMain = baseAreaScale * 0.024; 
         
         const photoBottomY = renderY + renderH;
         const textCenterY = photoBottomY + (remainingBottomH / 2);
@@ -469,7 +481,6 @@
         const totalRowWidth = prefixWidth + modelWidth;
         let startX = (canvasW - totalRowWidth) / 2;
 
-        // CORREZIONE INTERLINEA: Avvicinate le due righe riducendo il moltiplicatore (da 1.1 a 0.62)
         ctx.textAlign = "left";
         ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
         ctx.fillStyle = "#3a3a3f"; 
@@ -485,17 +496,14 @@
         let technicalString = `${focalText}   ${aperture}   ${shutter}   ${iso}`;
         ctx.fillText(technicalString, canvasW / 2, textCenterY + (fontSizeMain * 0.62));
 
-        // Conversione immediata in elemento immagine per aggirare i bug di iOS Safari
-        iosImg.src = canvas.toDataURL('image/jpeg', 0.98);
+        iosImg.src = canvas.toDataURL('image/jpeg', 0.95);
         iosImg.style.display = 'block';
         changeImgBtn.style.display = 'block';
     }
 
-    // Risoluzione bug di esportazione iOS
     saveBtn.onclick = () => {
         if(!iosImg.src) return;
         iosHint.style.display = 'block';
-        // Su iPhone scrolla leggermente verso l'alto per mostrare l'immagine pronta da salvare
         iosImg.scrollIntoView({ behavior: 'smooth' });
     };
 </script>
