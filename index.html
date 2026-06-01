@@ -322,8 +322,8 @@
                 canvasW = imgH * targetAspect;
             }
         } else {
-            canvasW = imgW * 1.06;
-            canvasH = imgH * 1.14;
+            canvasW = imgW * 1.08;
+            canvasH = imgH * 1.18;
         }
 
         canvas.width = canvasW;
@@ -334,7 +334,9 @@
 
         const shortSide = Math.min(canvasW, canvasH);
         const baseBorder = shortSide * 0.035;
-        const standardBottomArea = shortSide * 0.12;
+        
+        // Aumentiamo l'area bianca inferiore per ospitare il testo gigante
+        const standardBottomArea = shortSide * 0.16;
 
         let renderW = imgW;
         let renderH = imgH;
@@ -412,9 +414,9 @@
             shutter = expTime < 1 ? `1/${Math.round(1 / expTime)}s` : `${expTime}s`;
         }
 
-        // --- CALCOLO DIMENSIONE TESTO AGGIORNATO (MOLTO PIÙ GRANDE) ---
-        // Calcolo ancorato saldamente al lato minore del canvas per mantenere leggibilità ovunque
-        const fontSizeMain = shortSide * 0.024; // Portata al 2.4% del lato corto (prima era quasi la metà)
+        // --- NUOVO CALCOLO SULLA DIMENSIONE FONT (IMPATTANTE) ---
+        // Portiamo la scala al 4.2% del lato minore. Ora le scritte saranno spesse e visibili al primo sguardo.
+        const fontSizeMain = shortSide * 0.042; 
         
         const photoBottomY = renderY + renderH;
         const textCenterY = photoBottomY + (remainingBottomH / 2);
@@ -433,22 +435,22 @@
         const totalRowWidth = prefixWidth + modelWidth;
         let startX = (canvasW - totalRowWidth) / 2;
 
-        // Scrittura riga 1 con più respiro verticale
+        // Scrittura riga 1 (Modello fotocamera) - Aumentata la spaziatura verticale relativa (1.1)
         ctx.textAlign = "left";
         ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#4b4b50"; 
-        ctx.fillText(prefixText, startX, textCenterY - (fontSizeMain * 0.85));
+        ctx.fillStyle = "#3a3a3f"; 
+        ctx.fillText(prefixText, startX, textCenterY - (fontSizeMain * 1.1));
 
         ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#111115";
-        ctx.fillText(modelText, startX + prefixWidth, textCenterY - (fontSizeMain * 0.85));
+        ctx.fillStyle = "#05050a";
+        ctx.fillText(modelText, startX + prefixWidth, textCenterY - (fontSizeMain * 1.1));
 
-        // Scrittura riga 2 più grande, definita e distanziata
+        // Scrittura riga 2 (Dati Tecnici) - Più grande e definita
         ctx.textAlign = "center";
         ctx.font = `400 ${fontSizeMain * 0.85}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#5d5d62"; 
+        ctx.fillStyle = "#4a4a50"; 
         let technicalString = `${focalText}   ${aperture}   ${shutter}   ${iso}`;
-        ctx.fillText(technicalString, canvasW / 2, textCenterY + (fontSizeMain * 0.85));
+        ctx.fillText(technicalString, canvasW / 2, textCenterY + (fontSizeMain * 1.1));
     }
 
     saveBtn.onclick = () => {
