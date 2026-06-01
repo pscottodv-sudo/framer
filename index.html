@@ -412,10 +412,9 @@
             shutter = expTime < 1 ? `1/${Math.round(1 / expTime)}s` : `${expTime}s`;
         }
 
-        // --- CALCOLO NUOVA DIMENSIONE DEL TESTO INGRANDITO ---
-        // Usiamo la media geometrica di entrambi i lati per evitare che si rimpicciolisca troppo nei tagli verticali strette
-        const baseDimension = Math.sqrt(canvasW * canvasH);
-        const fontSizeMain = baseDimension * 0.016; // Incrementata la scala globale per massima leggibilità
+        // --- CALCOLO DIMENSIONE TESTO AGGIORNATO (MOLTO PIÙ GRANDE) ---
+        // Calcolo ancorato saldamente al lato minore del canvas per mantenere leggibilità ovunque
+        const fontSizeMain = shortSide * 0.024; // Portata al 2.4% del lato corto (prima era quasi la metà)
         
         const photoBottomY = renderY + renderH;
         const textCenterY = photoBottomY + (remainingBottomH / 2);
@@ -434,21 +433,22 @@
         const totalRowWidth = prefixWidth + modelWidth;
         let startX = (canvasW - totalRowWidth) / 2;
 
+        // Scrittura riga 1 con più respiro verticale
         ctx.textAlign = "left";
         ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#55555a"; 
-        ctx.fillText(prefixText, startX, textCenterY - (fontSizeMain * 0.75));
+        ctx.fillStyle = "#4b4b50"; 
+        ctx.fillText(prefixText, startX, textCenterY - (fontSizeMain * 0.85));
 
         ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#1c1c1e";
-        ctx.fillText(modelText, startX + prefixWidth, textCenterY - (fontSizeMain * 0.75));
+        ctx.fillStyle = "#111115";
+        ctx.fillText(modelText, startX + prefixWidth, textCenterY - (fontSizeMain * 0.85));
 
-        // Linea 2 (Dati tecnici): Aumentata la dimensione proporzionale (da 0.75 a 0.82) per renderla leggibile
+        // Scrittura riga 2 più grande, definita e distanziata
         ctx.textAlign = "center";
-        ctx.font = `400 ${fontSizeMain * 0.82}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#71717a"; // Grigio leggermente più scuro per miglior contrasto sul bianco
+        ctx.font = `400 ${fontSizeMain * 0.85}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        ctx.fillStyle = "#5d5d62"; 
         let technicalString = `${focalText}   ${aperture}   ${shutter}   ${iso}`;
-        ctx.fillText(technicalString, canvasW / 2, textCenterY + (fontSizeMain * 0.75));
+        ctx.fillText(technicalString, canvasW / 2, textCenterY + (fontSizeMain * 0.85));
     }
 
     saveBtn.onclick = () => {
