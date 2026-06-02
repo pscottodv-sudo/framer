@@ -17,6 +17,7 @@
             --accent: #ffffff;
             --accent-dim: #a1a1a6;
             --border: #2c2c2e;
+            --film-accent: #c8a96e;
         }
         
         * {
@@ -95,7 +96,7 @@
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
             z-index: 10;
         }
 
@@ -103,7 +104,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
+            gap: 10px;
         }
 
         .selector-wrapper {
@@ -154,10 +155,7 @@
             transition: opacity 0.2s;
         }
 
-        .btn-action:active {
-            opacity: 0.8;
-        }
-
+        .btn-action:active { opacity: 0.8; }
         .btn-action:disabled {
             background: var(--panel-light);
             color: var(--accent-dim);
@@ -184,9 +182,153 @@
             pointer-events: none;
         }
 
+        /* ── TOGGLE ANALOGICO ── */
+        .mode-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--panel-light);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+        }
+
+        .mode-toggle-label {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .mode-toggle-label span:first-child {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .mode-toggle-label span:last-child {
+            font-size: 0.78rem;
+            color: var(--accent-dim);
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            background: var(--border);
+            border-radius: 999px;
+            transition: background 0.25s;
+            cursor: pointer;
+        }
+
+        .toggle-track::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.25s;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        }
+
+        .toggle-switch input:checked + .toggle-track {
+            background: var(--film-accent);
+        }
+
+        .toggle-switch input:checked + .toggle-track::after {
+            transform: translateX(20px);
+        }
+
+        /* ── CAMPI ANALOGICI ── */
+        .analog-fields {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.35s ease, opacity 0.3s ease;
+        }
+
+        .analog-fields.open {
+            max-height: 500px;
+            opacity: 1;
+        }
+
+        .analog-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .analog-field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .analog-field label {
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--accent-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding-left: 4px;
+        }
+
+        .analog-field input {
+            background: var(--panel-light);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            padding: 13px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .analog-field input:focus {
+            border-color: var(--film-accent);
+        }
+
+        .analog-field input::placeholder {
+            color: #555;
+        }
+
+        /* Riga film stock full-width */
+        .analog-film-row {
+            display: flex;
+            gap: 10px;
+        }
+
         @media (min-width: 768px) {
             .app-layout { flex-direction: row; }
-            .control-panel { width: 380px; height: 100%; border-top: none; border-left: 1px solid var(--border); justify-content: center; padding: 40px 24px; }
+            .control-panel { 
+                width: 380px; 
+                height: 100%; 
+                border-top: none; 
+                border-left: 1px solid var(--border); 
+                justify-content: center; 
+                padding: 40px 24px; 
+                overflow-y: auto;
+            }
             .panel-row { flex-direction: column; align-items: stretch; }
         }
     </style>
@@ -210,7 +352,8 @@
 
     <div class="control-panel">
         <input type="file" id="fileInput" accept="image/jpeg, image/jpg" style="display:none">
-        
+
+        <!-- Selettori formato -->
         <div class="panel-row" style="gap: 10px;">
             <div class="selector-wrapper">
                 <select id="aspectRatio" disabled>
@@ -229,6 +372,47 @@
             </div>
         </div>
 
+        <!-- Toggle modalità analogica -->
+        <div class="mode-toggle-row">
+            <div class="mode-toggle-label">
+                <span>Modalità Analogica</span>
+                <span>Inserisci i dati manualmente</span>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="analogToggle">
+                <span class="toggle-track"></span>
+            </label>
+        </div>
+
+        <!-- Campi analogici (nascosti di default) -->
+        <div class="analog-fields" id="analogFields">
+            <div class="analog-row">
+                <div class="analog-field">
+                    <label>Camera</label>
+                    <input type="text" id="analogCamera" placeholder="es. Nikon F100">
+                </div>
+                <div class="analog-field">
+                    <label>Film Stock</label>
+                    <input type="text" id="analogFilm" placeholder="es. Kodak Portra 400">
+                </div>
+            </div>
+            <div class="analog-row">
+                <div class="analog-field">
+                    <label>Focale</label>
+                    <input type="text" id="analogFocal" placeholder="50" inputmode="decimal">
+                </div>
+                <div class="analog-field">
+                    <label>Apertura</label>
+                    <input type="text" id="analogAperture" placeholder="2.8" inputmode="decimal">
+                </div>
+                <div class="analog-field">
+                    <label>Otturatore</label>
+                    <input type="text" id="analogShutter" placeholder="1/125" inputmode="text">
+                </div>
+            </div>
+        </div>
+
+        <!-- Azioni -->
         <div class="panel-row">
             <button class="btn-action btn-secondary" id="changeImgBtn" style="display: none; flex: 1;">Cambia</button>
             <button class="btn-action" id="saveBtn" disabled style="flex: 2;">Salva Immagine</button>
@@ -237,28 +421,48 @@
 </div>
 
 <script>
-    const fileInput = document.getElementById('fileInput');
+    const fileInput       = document.getElementById('fileInput');
     const aspectRatioSelect = document.getElementById('aspectRatio');
     const orientationSelect = document.getElementById('orientation');
-    const canvas = document.getElementById('mainCanvas');
-    const iosImg = document.getElementById('iosImg');
-    const iosHint = document.getElementById('iosHint');
-    const ctx = canvas.getContext('2d', { alpha: false });
-    const saveBtn = document.getElementById('saveBtn');
-    const changeImgBtn = document.getElementById('changeImgBtn');
-    const placeholder = document.getElementById('placeholder');
+    const canvas          = document.getElementById('mainCanvas');
+    const iosImg          = document.getElementById('iosImg');
+    const iosHint         = document.getElementById('iosHint');
+    const ctx             = canvas.getContext('2d', { alpha: false });
+    const saveBtn         = document.getElementById('saveBtn');
+    const changeImgBtn    = document.getElementById('changeImgBtn');
+    const placeholder     = document.getElementById('placeholder');
+    const analogToggle    = document.getElementById('analogToggle');
+    const analogFields    = document.getElementById('analogFields');
+
+    // Campi analogici
+    const analogCamera    = document.getElementById('analogCamera');
+    const analogFilm      = document.getElementById('analogFilm');
+    const analogFocal     = document.getElementById('analogFocal');
+    const analogAperture  = document.getElementById('analogAperture');
+    const analogShutter   = document.getElementById('analogShutter');
 
     let sourceImg = new Image();
     let currentExif = {};
-    
-    // Dimensioni regolate per la stabilità della RAM di iOS
     let scaledW = 0;
     let scaledH = 0;
 
+    // ── EVENT LISTENERS ──
     fileInput.addEventListener('change', handleFile);
     aspectRatioSelect.addEventListener('change', updateSelectors);
     orientationSelect.addEventListener('change', generateFrame);
+    changeImgBtn.addEventListener('click', () => fileInput.click());
 
+    analogToggle.addEventListener('change', () => {
+        analogFields.classList.toggle('open', analogToggle.checked);
+        if (sourceImg.src) generateFrame();
+    });
+
+    // Rigenera al volo mentre si digita
+    [analogCamera, analogFilm, analogFocal, analogAperture, analogShutter].forEach(input => {
+        input.addEventListener('input', () => { if (sourceImg.src) generateFrame(); });
+    });
+
+    // ── UPLOAD ──
     function triggerUpload(e) {
         if (placeholder.style.display !== 'none' || e.target.id === 'previewZone') {
             fileInput.click();
@@ -268,42 +472,31 @@
     function handleFile() {
         const file = fileInput.files[0];
         if (!file) return;
-        
+
         const reader = new FileReader();
         reader.onload = (event) => {
-            sourceImg.src = ""; 
+            sourceImg.src = "";
             sourceImg.onload = () => {
                 try {
                     EXIF.getData(sourceImg, function() {
                         currentExif = EXIF.getAllTags(this);
-                        
+
                         aspectRatioSelect.disabled = false;
                         saveBtn.disabled = false;
                         placeholder.style.display = 'none';
-                        
-                        // ALGORITMO DI RIGENERAZIONE SCALA DI SICUREZZA PER FOTO ORIZZONTALI SU iOS
-                        const MAX_SIDE = 3200; 
+
+                        const MAX_SIDE = 3200;
                         let w = sourceImg.naturalWidth;
                         let h = sourceImg.naturalHeight;
-                        
+
                         if (w > MAX_SIDE || h > MAX_SIDE) {
-                            if (w > h) {
-                                h = Math.round((h * MAX_SIDE) / w);
-                                w = MAX_SIDE;
-                            } else {
-                                w = Math.round((w * MAX_SIDE) / h);
-                                h = MAX_SIDE;
-                            }
+                            if (w > h) { h = Math.round((h * MAX_SIDE) / w); w = MAX_SIDE; }
+                            else       { w = Math.round((w * MAX_SIDE) / h); h = MAX_SIDE; }
                         }
                         scaledW = w;
                         scaledH = h;
 
-                        if (scaledW >= scaledH) {
-                            orientationSelect.value = 'horizontal';
-                        } else {
-                            orientationSelect.value = 'vertical';
-                        }
-                        
+                        orientationSelect.value = (scaledW >= scaledH) ? 'horizontal' : 'vertical';
                         updateSelectors();
                     });
                 } catch (err) {
@@ -318,90 +511,79 @@
         reader.readAsDataURL(file);
     }
 
+    // ── SELETTORI ──
     function updateSelectors() {
         const mode = aspectRatioSelect.value;
-        if (mode === '1:1' || mode === 'original') {
-            orientationSelect.disabled = true;
-        } else {
-            orientationSelect.disabled = false;
-        }
+        orientationSelect.disabled = (mode === '1:1' || mode === 'original');
         generateFrame();
     }
 
+    // ── UTILITY ──
     function cleanBrandName(make) {
         if (!make) return "";
         let brand = make.toUpperCase();
-        if (brand.includes("NIKON")) return "Nikon";
-        if (brand.includes("FUJIFILM")) return "Fujifilm";
-        if (brand.includes("SONY")) return "Sony";
-        if (brand.includes("CANON")) return "Canon";
-        if (brand.includes("LEICA")) return "Leica";
-        if (brand.includes("APPLE")) return "Apple";
+        if (brand.includes("NIKON"))   return "Nikon";
+        if (brand.includes("FUJIFILM"))return "Fujifilm";
+        if (brand.includes("SONY"))    return "Sony";
+        if (brand.includes("CANON"))   return "Canon";
+        if (brand.includes("LEICA"))   return "Leica";
+        if (brand.includes("APPLE"))   return "Apple";
         return make.split(' ')[0];
     }
 
+    // ── GENERAZIONE FRAME ──
     function generateFrame() {
         if (!sourceImg.src) return;
 
         iosImg.style.display = 'none';
         iosHint.style.display = 'none';
 
+        const isAnalog = analogToggle.checked;
+
+        // Canvas dimensions
         let canvasW = scaledW;
         let canvasH = scaledH;
-
-        const mode = aspectRatioSelect.value;
+        const mode   = aspectRatioSelect.value;
         const orient = orientationSelect.value;
 
         if (mode !== 'original') {
             let [wRatio, hRatio] = mode.split(':').map(Number);
-            if (orient === 'vertical') {
-                const temp = wRatio;
-                wRatio = hRatio;
-                hRatio = temp;
-            }
+            if (orient === 'vertical') { const t = wRatio; wRatio = hRatio; hRatio = t; }
             const targetAspect = wRatio / hRatio;
-            
             if ((scaledW / scaledH) > targetAspect) {
-                canvasW = scaledW;
-                canvasH = scaledW / targetAspect;
+                canvasW = scaledW; canvasH = scaledW / targetAspect;
             } else {
-                canvasH = scaledH;
-                canvasW = scaledH * targetAspect;
+                canvasH = scaledH; canvasW = scaledH * targetAspect;
             }
         } else {
             canvasW = scaledW * 1.06;
             canvasH = scaledH * 1.14;
         }
 
-        canvas.width = canvasW;
+        canvas.width  = canvasW;
         canvas.height = canvasH;
 
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvasW, canvasH);
 
-        const shortSide = Math.min(canvasW, canvasH);
-        const baseBorder = shortSide * 0.035;
+        const shortSide        = Math.min(canvasW, canvasH);
+        const baseBorder       = shortSide * 0.035;
         const standardBottomArea = shortSide * 0.12;
 
         let renderW = scaledW;
         let renderH = scaledH;
-        
-        const maxBoxW = canvasW - (baseBorder * 2);
-        const maxBoxH = canvasH - baseBorder - standardBottomArea;
+        const maxBoxW   = canvasW - (baseBorder * 2);
+        const maxBoxH   = canvasH - baseBorder - standardBottomArea;
         const imgAspect = scaledW / scaledH;
         const boxAspect = maxBoxW / maxBoxH;
 
         if (imgAspect > boxAspect) {
-            renderW = maxBoxW;
-            renderH = maxBoxW / imgAspect;
+            renderW = maxBoxW; renderH = maxBoxW / imgAspect;
         } else {
-            renderH = maxBoxH;
-            renderW = maxBoxH * imgAspect;
+            renderH = maxBoxH; renderW = maxBoxH * imgAspect;
         }
 
-        let renderX, renderY;
-        let remainingBottomH;
-
+        let renderX, renderY, remainingBottomH;
         const canvasAspect = canvasW / canvasH;
 
         if ((imgAspect >= 1 && canvasAspect < 1) || (imgAspect < 1 && canvasAspect >= 1)) {
@@ -409,12 +591,11 @@
             renderY = (maxBoxH - renderH) / 2 + baseBorder;
             remainingBottomH = canvasH - (renderY + renderH);
         } else {
-            const totalExtraWidth = canvasW - renderW;
+            const totalExtraWidth  = canvasW - renderW;
             const totalExtraHeight = canvasH - renderH;
-
             if (imgAspect < canvasAspect) {
                 renderX = totalExtraWidth / 2;
-                renderY = totalExtraHeight * 0.38; 
+                renderY = totalExtraHeight * 0.38;
                 remainingBottomH = canvasH - (renderY + renderH);
             } else {
                 renderX = (canvasW - renderW) / 2;
@@ -426,75 +607,133 @@
         if (renderY < baseBorder) renderY = baseBorder;
         if (renderX < baseBorder) renderX = baseBorder;
 
-        // Rendering con downsampling sicuro
         ctx.drawImage(sourceImg, renderX, renderY, renderW, renderH);
 
-        // --- EXIF ---
-        let rawMake = currentExif.Make || "";
-        let model = currentExif.Model || "Unknown Camera";
-        let cleanMake = cleanBrandName(rawMake);
-        
-        if (cleanMake && model.toLowerCase().includes(cleanMake.toLowerCase())) {
-            cleanMake = "";
-        }
-        let cleanModel = (cleanMake ? cleanMake + " " : "") + model;
-        cleanModel = cleanModel.replace(/CORPORATION|CORP\.|LTD|INC\./gi, '').trim();
-
-        let focalLength = currentExif.FocalLengthIn35mmFilm;
-        if (!focalLength && currentExif.FocalLength) {
-            const fRaw = currentExif.FocalLength;
-            if (fRaw < 10 && cleanModel.toLowerCase().includes("iphone")) {
-                focalLength = Math.round(fRaw * 6.5);
-            } else {
-                focalLength = Math.round(fRaw);
-            }
-        }
-        let focalText = focalLength ? `${focalLength}mm` : "--mm";
-
-        let aperture = currentExif.FNumber ? `f/${currentExif.FNumber}` : "f/--";
-        let iso = currentExif.ISOSpeedRatings ? `ISO ${currentExif.ISOSpeedRatings}` : "ISO --";
-        
-        let shutter = "--s";
-        if (currentExif.ExposureTime) {
-            const expTime = currentExif.ExposureTime;
-            shutter = expTime < 1 ? `1/${Math.round(1 / expTime)}s` : `${expTime}s`;
-        }
-
-        // --- CALCOLO TIPOGRAFICO PROPORZIONALE STABILE ---
+        // ── TESTO ──
         const baseAreaScale = Math.sqrt(canvasW * canvasH);
-        const fontSizeMain = baseAreaScale * 0.024; 
-        
-        const photoBottomY = renderY + renderH;
-        const textCenterY = photoBottomY + (remainingBottomH / 2);
-
+        const fontSizeMain  = baseAreaScale * 0.024;
+        const photoBottomY  = renderY + renderH;
+        const textCenterY   = photoBottomY + (remainingBottomH / 2);
         ctx.textBaseline = "middle";
-        
-        const prefixText = "Shot on ";
-        const modelText = cleanModel;
 
-        ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        const prefixWidth = ctx.measureText(prefixText).width;
-        
-        ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        const modelWidth = ctx.measureText(modelText).width;
+        if (isAnalog) {
+            // MODALITÀ ANALOGICA
+            const camVal  = analogCamera.value.trim()   || "Unknown Camera";
+            const filmVal = analogFilm.value.trim();
 
-        const totalRowWidth = prefixWidth + modelWidth;
-        let startX = (canvasW - totalRowWidth) / 2;
+            const focalRaw    = analogFocal.value.trim();
+            const apertureRaw = analogAperture.value.trim();
+            const shutterRaw  = analogShutter.value.trim();
 
-        ctx.textAlign = "left";
-        ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#3a3a3f"; 
-        ctx.fillText(prefixText, startX, textCenterY - (fontSizeMain * 0.62));
+            const focalVal    = focalRaw    ? `${focalRaw}mm`    : "--mm";
+            const apertureVal = apertureRaw ? `f/${apertureRaw}` : "f/--";
+            const shutterVal  = shutterRaw  ? `${shutterRaw}s`   : "--s";
 
-        ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#05050a";
-        ctx.fillText(modelText, startX + prefixWidth, textCenterY - (fontSizeMain * 0.62));
+            // Riga 1: "Shot on [Camera] · [Film]"  oppure solo "Shot on [Camera]"
+            const prefixText = "Shot on ";
+            const cameraText = camVal;
+            const sepText    = filmVal ? "  ·  " : "";
+            const filmText   = filmVal;
 
-        ctx.textAlign = "center";
-        ctx.font = `400 ${fontSizeMain * 0.82}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.fillStyle = "#4a4a50"; 
-        let technicalString = `${focalText}   ${aperture}   ${shutter}   ${iso}`;
-        ctx.fillText(technicalString, canvasW / 2, textCenterY + (fontSizeMain * 0.62));
+            ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            const prefixW = ctx.measureText(prefixText).width;
+            const sepW    = ctx.measureText(sepText).width;
+
+            ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            const cameraW = ctx.measureText(cameraText).width;
+
+            ctx.font = `500 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            const filmW = ctx.measureText(filmText).width;
+
+            const totalRowW = prefixW + cameraW + sepW + filmW;
+            let startX = (canvasW - totalRowW) / 2;
+            const lineY = textCenterY - (fontSizeMain * 0.62);
+
+            ctx.textAlign = "left";
+
+            // "Shot on "
+            ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.fillStyle = "#3a3a3f";
+            ctx.fillText(prefixText, startX, lineY);
+            startX += prefixW;
+
+            // Camera (bold, nero)
+            ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.fillStyle = "#05050a";
+            ctx.fillText(cameraText, startX, lineY);
+            startX += cameraW;
+
+            // Separatore "·"
+            if (filmVal) {
+                ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                ctx.fillStyle = "#8a8a8f";
+                ctx.fillText(sepText, startX, lineY);
+                startX += sepW;
+
+                // Film stock (medium, colore caldo)
+                ctx.font = `500 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+                ctx.fillStyle = "#8a6a3a";
+                ctx.fillText(filmText, startX, lineY);
+            }
+
+            // Riga 2: dati tecnici
+            ctx.textAlign = "center";
+            ctx.font = `400 ${fontSizeMain * 0.82}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.fillStyle = "#4a4a50";
+            const techString = `${focalVal}   ${apertureVal}   ${shutterVal}`;
+            ctx.fillText(techString, canvasW / 2, textCenterY + (fontSizeMain * 0.62));
+
+        } else {
+            // MODALITÀ DIGITALE (logica originale)
+            let rawMake    = currentExif.Make  || "";
+            let model      = currentExif.Model || "Unknown Camera";
+            let cleanMake  = cleanBrandName(rawMake);
+            if (cleanMake && model.toLowerCase().includes(cleanMake.toLowerCase())) cleanMake = "";
+            let cleanModel = (cleanMake ? cleanMake + " " : "") + model;
+            cleanModel = cleanModel.replace(/CORPORATION|CORP\.|LTD|INC\./gi, '').trim();
+
+            let focalLength = currentExif.FocalLengthIn35mmFilm;
+            if (!focalLength && currentExif.FocalLength) {
+                const fRaw = currentExif.FocalLength;
+                focalLength = (fRaw < 10 && cleanModel.toLowerCase().includes("iphone"))
+                    ? Math.round(fRaw * 6.5)
+                    : Math.round(fRaw);
+            }
+            let focalText  = focalLength ? `${focalLength}mm` : "--mm";
+            let aperture   = currentExif.FNumber ? `f/${currentExif.FNumber}` : "f/--";
+            let iso        = currentExif.ISOSpeedRatings ? `ISO ${currentExif.ISOSpeedRatings}` : "ISO --";
+
+            let shutter = "--s";
+            if (currentExif.ExposureTime) {
+                const expTime = currentExif.ExposureTime;
+                shutter = expTime < 1 ? `1/${Math.round(1 / expTime)}s` : `${expTime}s`;
+            }
+
+            const prefixText = "Shot on ";
+            const modelText  = cleanModel;
+
+            ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            const prefixWidth = ctx.measureText(prefixText).width;
+            ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            const modelWidth = ctx.measureText(modelText).width;
+
+            const totalRowWidth = prefixWidth + modelWidth;
+            let startX = (canvasW - totalRowWidth) / 2;
+
+            ctx.textAlign = "left";
+            ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.fillStyle = "#3a3a3f";
+            ctx.fillText(prefixText, startX, textCenterY - (fontSizeMain * 0.62));
+
+            ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.fillStyle = "#05050a";
+            ctx.fillText(modelText, startX + prefixWidth, textCenterY - (fontSizeMain * 0.62));
+
+            ctx.textAlign = "center";
+            ctx.font = `400 ${fontSizeMain * 0.82}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.fillStyle = "#4a4a50";
+            ctx.fillText(`${focalText}   ${aperture}   ${shutter}   ${iso}`, canvasW / 2, textCenterY + (fontSizeMain * 0.62));
+        }
 
         iosImg.src = canvas.toDataURL('image/jpeg', 0.95);
         iosImg.style.display = 'block';
@@ -502,7 +741,7 @@
     }
 
     saveBtn.onclick = () => {
-        if(!iosImg.src) return;
+        if (!iosImg.src) return;
         iosHint.style.display = 'block';
         iosImg.scrollIntoView({ behavior: 'smooth' });
     };
