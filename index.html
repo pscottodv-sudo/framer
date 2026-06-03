@@ -266,7 +266,7 @@
         }
 
         .analog-fields.open {
-            max-height: 500px;
+            max-height: 200px;
             opacity: 1;
         }
 
@@ -310,12 +310,6 @@
 
         .analog-field input::placeholder {
             color: #555;
-        }
-
-        /* Riga film stock full-width */
-        .analog-film-row {
-            display: flex;
-            gap: 10px;
         }
 
         @media (min-width: 768px) {
@@ -384,7 +378,7 @@
             </label>
         </div>
 
-        <!-- Campi analogici (nascosti di default) -->
+        <!-- Campi analogici: solo Camera e Film Stock -->
         <div class="analog-fields" id="analogFields">
             <div class="analog-row">
                 <div class="analog-field">
@@ -394,20 +388,6 @@
                 <div class="analog-field">
                     <label>Film Stock</label>
                     <input type="text" id="analogFilm" placeholder="es. Kodak Portra 400">
-                </div>
-            </div>
-            <div class="analog-row">
-                <div class="analog-field">
-                    <label>Focale</label>
-                    <input type="text" id="analogFocal" placeholder="50" inputmode="decimal">
-                </div>
-                <div class="analog-field">
-                    <label>Apertura</label>
-                    <input type="text" id="analogAperture" placeholder="2.8" inputmode="decimal">
-                </div>
-                <div class="analog-field">
-                    <label>Otturatore</label>
-                    <input type="text" id="analogShutter" placeholder="1/125" inputmode="text">
                 </div>
             </div>
         </div>
@@ -421,27 +401,23 @@
 </div>
 
 <script>
-    const fileInput       = document.getElementById('fileInput');
+    const fileInput         = document.getElementById('fileInput');
     const aspectRatioSelect = document.getElementById('aspectRatio');
     const orientationSelect = document.getElementById('orientation');
-    const canvas          = document.getElementById('mainCanvas');
-    const iosImg          = document.getElementById('iosImg');
-    const iosHint         = document.getElementById('iosHint');
-    const ctx             = canvas.getContext('2d', { alpha: false });
-    const saveBtn         = document.getElementById('saveBtn');
-    const changeImgBtn    = document.getElementById('changeImgBtn');
-    const placeholder     = document.getElementById('placeholder');
-    const analogToggle    = document.getElementById('analogToggle');
-    const analogFields    = document.getElementById('analogFields');
+    const canvas            = document.getElementById('mainCanvas');
+    const iosImg            = document.getElementById('iosImg');
+    const iosHint           = document.getElementById('iosHint');
+    const ctx               = canvas.getContext('2d', { alpha: false });
+    const saveBtn           = document.getElementById('saveBtn');
+    const changeImgBtn      = document.getElementById('changeImgBtn');
+    const placeholder       = document.getElementById('placeholder');
+    const analogToggle      = document.getElementById('analogToggle');
+    const analogFields      = document.getElementById('analogFields');
 
-    // Campi analogici
-    const analogCamera    = document.getElementById('analogCamera');
-    const analogFilm      = document.getElementById('analogFilm');
-    const analogFocal     = document.getElementById('analogFocal');
-    const analogAperture  = document.getElementById('analogAperture');
-    const analogShutter   = document.getElementById('analogShutter');
+    const analogCamera = document.getElementById('analogCamera');
+    const analogFilm   = document.getElementById('analogFilm');
 
-    let sourceImg = new Image();
+    let sourceImg  = new Image();
     let currentExif = {};
     let scaledW = 0;
     let scaledH = 0;
@@ -457,8 +433,7 @@
         if (sourceImg.src) generateFrame();
     });
 
-    // Rigenera al volo mentre si digita
-    [analogCamera, analogFilm, analogFocal, analogAperture, analogShutter].forEach(input => {
+    [analogCamera, analogFilm].forEach(input => {
         input.addEventListener('input', () => { if (sourceImg.src) generateFrame(); });
     });
 
@@ -522,12 +497,12 @@
     function cleanBrandName(make) {
         if (!make) return "";
         let brand = make.toUpperCase();
-        if (brand.includes("NIKON"))   return "Nikon";
-        if (brand.includes("FUJIFILM"))return "Fujifilm";
-        if (brand.includes("SONY"))    return "Sony";
-        if (brand.includes("CANON"))   return "Canon";
-        if (brand.includes("LEICA"))   return "Leica";
-        if (brand.includes("APPLE"))   return "Apple";
+        if (brand.includes("NIKON"))    return "Nikon";
+        if (brand.includes("FUJIFILM")) return "Fujifilm";
+        if (brand.includes("SONY"))     return "Sony";
+        if (brand.includes("CANON"))    return "Canon";
+        if (brand.includes("LEICA"))    return "Leica";
+        if (brand.includes("APPLE"))    return "Apple";
         return make.split(' ')[0];
     }
 
@@ -540,7 +515,6 @@
 
         const isAnalog = analogToggle.checked;
 
-        // Canvas dimensions
         let canvasW = scaledW;
         let canvasH = scaledH;
         const mode   = aspectRatioSelect.value;
@@ -566,8 +540,8 @@
         ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, canvasW, canvasH);
 
-        const shortSide        = Math.min(canvasW, canvasH);
-        const baseBorder       = shortSide * 0.035;
+        const shortSide          = Math.min(canvasW, canvasH);
+        const baseBorder         = shortSide * 0.035;
         const standardBottomArea = shortSide * 0.12;
 
         let renderW = scaledW;
@@ -617,19 +591,10 @@
         ctx.textBaseline = "middle";
 
         if (isAnalog) {
-            // MODALITÀ ANALOGICA
-            const camVal  = analogCamera.value.trim()   || "Unknown Camera";
+            // MODALITÀ ANALOGICA — solo Camera e Film Stock, testo centrato verticalmente
+            const camVal  = analogCamera.value.trim() || "Unknown Camera";
             const filmVal = analogFilm.value.trim();
 
-            const focalRaw    = analogFocal.value.trim();
-            const apertureRaw = analogAperture.value.trim();
-            const shutterRaw  = analogShutter.value.trim();
-
-            const focalVal    = focalRaw    ? `${focalRaw}mm`    : "--mm";
-            const apertureVal = apertureRaw ? `f/${apertureRaw}` : "f/--";
-            const shutterVal  = shutterRaw  ? `${shutterRaw}s`   : "--s";
-
-            // Riga 1: "Shot on [Camera] · [Film]"  oppure solo "Shot on [Camera]"
             const prefixText = "Shot on ";
             const cameraText = camVal;
             const sepText    = filmVal ? "  ·  " : "";
@@ -647,47 +612,38 @@
 
             const totalRowW = prefixW + cameraW + sepW + filmW;
             let startX = (canvasW - totalRowW) / 2;
-            const lineY = textCenterY - (fontSizeMain * 0.62);
 
             ctx.textAlign = "left";
 
             // "Shot on "
             ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
             ctx.fillStyle = "#3a3a3f";
-            ctx.fillText(prefixText, startX, lineY);
+            ctx.fillText(prefixText, startX, textCenterY);
             startX += prefixW;
 
             // Camera (bold, nero)
             ctx.font = `600 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
             ctx.fillStyle = "#05050a";
-            ctx.fillText(cameraText, startX, lineY);
+            ctx.fillText(cameraText, startX, textCenterY);
             startX += cameraW;
 
-            // Separatore "·"
+            // Separatore + Film Stock
             if (filmVal) {
                 ctx.font = `400 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
                 ctx.fillStyle = "#8a8a8f";
-                ctx.fillText(sepText, startX, lineY);
+                ctx.fillText(sepText, startX, textCenterY);
                 startX += sepW;
 
-                // Film stock (medium, colore caldo)
                 ctx.font = `500 ${fontSizeMain}px -apple-system, BlinkMacSystemFont, sans-serif`;
                 ctx.fillStyle = "#8a6a3a";
-                ctx.fillText(filmText, startX, lineY);
+                ctx.fillText(filmText, startX, textCenterY);
             }
 
-            // Riga 2: dati tecnici
-            ctx.textAlign = "center";
-            ctx.font = `400 ${fontSizeMain * 0.82}px -apple-system, BlinkMacSystemFont, sans-serif`;
-            ctx.fillStyle = "#4a4a50";
-            const techString = `${focalVal}   ${apertureVal}   ${shutterVal}`;
-            ctx.fillText(techString, canvasW / 2, textCenterY + (fontSizeMain * 0.62));
-
         } else {
-            // MODALITÀ DIGITALE (logica originale)
-            let rawMake    = currentExif.Make  || "";
-            let model      = currentExif.Model || "Unknown Camera";
-            let cleanMake  = cleanBrandName(rawMake);
+            // MODALITÀ DIGITALE
+            let rawMake   = currentExif.Make  || "";
+            let model     = currentExif.Model || "Unknown Camera";
+            let cleanMake = cleanBrandName(rawMake);
             if (cleanMake && model.toLowerCase().includes(cleanMake.toLowerCase())) cleanMake = "";
             let cleanModel = (cleanMake ? cleanMake + " " : "") + model;
             cleanModel = cleanModel.replace(/CORPORATION|CORP\.|LTD|INC\./gi, '').trim();
@@ -699,9 +655,9 @@
                     ? Math.round(fRaw * 6.5)
                     : Math.round(fRaw);
             }
-            let focalText  = focalLength ? `${focalLength}mm` : "--mm";
-            let aperture   = currentExif.FNumber ? `f/${currentExif.FNumber}` : "f/--";
-            let iso        = currentExif.ISOSpeedRatings ? `ISO ${currentExif.ISOSpeedRatings}` : "ISO --";
+            let focalText = focalLength ? `${focalLength}mm` : "--mm";
+            let aperture  = currentExif.FNumber ? `f/${currentExif.FNumber}` : "f/--";
+            let iso       = currentExif.ISOSpeedRatings ? `ISO ${currentExif.ISOSpeedRatings}` : "ISO --";
 
             let shutter = "--s";
             if (currentExif.ExposureTime) {
